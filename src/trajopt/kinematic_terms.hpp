@@ -67,6 +67,16 @@ struct CartVelCalculator : VectorOfVector {
   VectorXd operator()(const VectorXd& dof_vals) const;
 };
 
+struct CartVelCalculator2 : ScalarOfVector {
+  ConfigurationPtr manip_;
+  KinBody::LinkPtr link_;
+  Vector3d pos_coeffs_;
+  CartVelCalculator2(ConfigurationPtr manip, KinBody::LinkPtr link, const Vector3d& pos_coeffs) :
+    manip_(manip), link_(link), pos_coeffs_(pos_coeffs) {}
+
+  double operator()(const VectorXd& dof_vals) const;
+};
+
 #if 0
 class CartPoseCost : public CostFromErrFunc {
 public:

@@ -135,6 +135,19 @@ VectorXd CartVelCalculator::operator()(const VectorXd& dof_vals) const {
 }
 
 
+double CartVelCalculator2::operator()(const VectorXd& dof_vals) const {
+  int n_dof = manip_->GetDOF();
+  manip_->SetDOFValues(toDblVec(dof_vals.topRows(n_dof)));
+  OR::Transform pose0 = link_->GetTransform();
+  manip_->SetDOFValues(toDblVec(dof_vals.bottomRows(n_dof)));
+  OR::Transform pose1 = link_->GetTransform();
+  VectorXd vel = toVector3d(pose1.trans - pose0.trans);
+  vel.array() *= pos_coeffs_.array();
+  return (vel.dot(vel));
+  //out.topRows(3) = toVector3d(pose1.trans - pose0.trans - OR::Vector(limit_,limit_,limit_));
+  //out.bottomRows(3) = toVector3d( - pose1.trans + pose0.trans - OR::Vector(limit_, limit_, limit_));
+}
+
 #if 0
 CartVelConstraint::CartVelConstraint(const VarVector& step0vars, const VarVector& step1vars, RobotAndDOFPtr manip, KinBody::LinkPtr link, double distlimit) :
         ConstraintFromFunc(VectorOfVectorPtr(new CartVelCalculator(manip, link, distlimit)),

@@ -49,6 +49,7 @@ void RegisterMakers() {
   TermInfo::RegisterMaker("joint_pos", &JointPosCostInfo::create);
   TermInfo::RegisterMaker("joint_vel", &JointVelCostInfo::create);
   TermInfo::RegisterMaker("collision", &CollisionCostInfo::create);
+  TermInfo::RegisterMaker("cart_vel2", &CartVelCostInfo::create);
 
   TermInfo::RegisterMaker("joint", &JointConstraintInfo::create);
   TermInfo::RegisterMaker("cart_vel", &CartVelCntInfo::create);
@@ -434,6 +435,37 @@ void CartVelCntInfo::hatch(TrajOptProb& prob) {
       concat(prob.GetVarRow(iStep), prob.GetVarRow(iStep+1)), VectorXd::Ones(0), INEQ, "CartVel")));     
   }
 }
+
+
+void CartVelCostInfo::fromJson(const Value& v) {
+  FAIL_IF_FALSE(v.isMember("params"));
+  const Value& params = v["params"];
+  childFromJson(params, first_step, "first_step");
+  childFromJson(params, last_step, "last_step");
+  childFromJson(params, pos_coeffs,"pos_coeffs", (Vector3d)Vector3d::Ones());
+
+  FAIL_IF_FALSE((first_step >= 0) && (first_step <= gPCI->basic_info.n_steps-1) && (first_step < last_step));
+  FAIL_IF_FALSE((last_step > 0) && (last_step <= gPCI->basic_info.n_steps-1));
+
+  string linkstr;
+  childFromJson(params, linkstr, "link");
+  link = gPCI->rad->GetRobot()->GetLink(linkstr);
+  if (!link) {
+    PRINT_AND_THROW( boost::format("invalid link name: %s")%linkstr);
+  }
+  
+  const char* all_fields[] = {"first_step", "last_step", "pos_coeffs","link"};
+  ensure_only_members(params, all_fields, sizeof(all_fields)/sizeof(char*));
+}
+
+void CartVelCostInfo::hatch(TrajOptProb& prob) {
+  for (int iStep = first_step; iStep < last_step; ++iStep) {
+    prob.addCost(CostPtr(new CostFromFunc(
+      ScalarOfVectorPtr(new CartVelCalculator2(prob.GetRAD(), link, pos_coeffs)),
+      concat(prob.GetVarRow(iStep), prob.GetVarRow(iStep+1)), "CartVel2")));     
+  }
+}
+
 
 void JointVelCostInfo::fromJson(const Value& v) {
   FAIL_IF_FALSE(v.isMember("params"));

@@ -207,6 +207,20 @@ struct CartVelCntInfo : public TermInfo, public MakesConstraint {
 };
 
 /**
+ \brief Link velocity squared
+
+ Blabla
+ */
+struct CartVelCostInfo : public TermInfo, public MakesCost {
+  int first_step, last_step;
+  Vector3d pos_coeffs;
+  KinBody::LinkPtr link;
+  void fromJson(const Value& v);
+  void hatch(TrajOptProb& prob);
+  DEFINE_CREATE(CartVelCostInfo)
+};
+
+/**
 \brief Joint-space velocity squared
 
 \f{align*}{
